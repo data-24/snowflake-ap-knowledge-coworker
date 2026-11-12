@@ -12,7 +12,40 @@ Data engineers ask in plain English and a **Cortex Agent** answers from Snowflak
 
 > **Everything is synthetic**: generated SAP-like data, generated project documents, generic names. It is a learning project and reference implementation, not production code.
 
-![architecture](assets/architecture.png)
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph MODEL["AP data model (synthetic, SAP-like)"]
+    direction TB
+    L["SAP_LANDING<br/>BKPF · BSEG · BSEC · LFA1<br/>LFB1 · LFBK · T001 · T005T"] --> E["EDW<br/>FACT_ACCOUNTS_PAYABLE_GLOBAL<br/>DIM_VENDOR · DIM_COMPANY_CODE"]
+    E --> D["AP_DATAMART<br/>DM_AP_OPEN_ITEMS · DM_AP_AGING_SUMMARY<br/>DM_AP_VENDOR · AP_AGING_BUCKETS"]
+    D --> R["AP_REPORTING<br/>VW_AP_OPEN_ITEMS · VW_AP_OVERDUE_ITEMS<br/>VW_AP_AGING_SUMMARY · VW_AP_VENDOR"]
+  end
+  subgraph META["Snowflake metadata (primary)"]
+    direction TB
+    M1["Comments · tags (inherited)"]
+    M2["Masking policies · keys"]
+    M3["Tasks (refresh schedule)"]
+    M4["GET_LINEAGE · classification"]
+  end
+  subgraph DOCS["Supplementary"]
+    direction TB
+    S1["Mapping sheet · relationships<br/>glossary · requirements · change log"]
+    S2["BRD · FSD · standards PDFs<br/>AI_PARSE_DOCUMENT"]
+  end
+  MODEL -.-> META
+  META --> P["REFRESH_KNOWLEDGE_FABRIC<br/>(Python procedure, scheduled)"]
+  S1 --> P
+  P --> KF["Knowledge Fabric tables<br/>objects · columns · lineage · impact<br/>data dictionary cards · T-code map<br/>AI_COMPLETE drafts for gaps"]
+  KF --> SV["Semantic view<br/>(Cortex Analyst)"]
+  KF --> CS1["Cortex Search<br/>catalog"]
+  S2 --> CS2["Cortex Search<br/>documents"]
+  SV --> AG["Cortex Agent<br/>AP Knowledge Co-worker"]
+  CS1 --> AG
+  CS2 --> AG
+  AG --> SI["Snowflake Intelligence"]
+```
 
 ## The problem it solves
 

@@ -66,7 +66,7 @@ In a typical SAP → EDW → datamart → BI landscape, a new request ("rebuild 
 
 Cortex Agents and Snowflake Intelligence · Cortex Search · Cortex Analyst with a semantic view (verified queries) · `AI_COMPLETE` (drafts descriptions for undocumented columns, for a steward to approve) · `AI_PARSE_DOCUMENT` + `SPLIT_TEXT_RECURSIVE_CHARACTER` · tags and tag inheritance · masking policies · `INFORMATION_SCHEMA` (`TAG_REFERENCES`, `POLICY_REFERENCES`) · `SHOW PRIMARY KEYS` · tasks · `SNOWFLAKE.CORE.GET_LINEAGE` · `SYSTEM$CLASSIFY`.
 
-## How to run (about 15 minutes)
+## How to run 
 
 Requirements: **Enterprise edition**, a role that can create a database, warehouse and roles (default `ACCOUNTADMIN`), and Cortex AI available (`SELECT AI_COMPLETE('claude-sonnet-4-5', 'hello');` must work).
 

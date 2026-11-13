@@ -116,7 +116,58 @@ SELECT column1, column2, column3, column4, column5, column6, column7, 'FSD AP Da
 ('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'IS_OPEN_ITEM', '{{LANDING}}.SAP_BSEG', 'AUGDT', 'Derived', 'TRUE when the clearing date AUGDT is empty.'),
 ('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'AMOUNT_LOCAL', '{{LANDING}}.SAP_BSEG', 'DMBTR', 'Derived', 'DMBTR signed with SHKZG: credit H = +DMBTR (invoice owed), debit S = -DMBTR (credit memo).'),
 ('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'AMOUNT_LOCAL', '{{LANDING}}.SAP_BSEG', 'SHKZG', 'Derived', 'Debit/credit indicator gives the sign.'),
-('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'PAYMENT_BLOCK', '{{LANDING}}.SAP_BSEG', 'ZLSPR', 'Direct', 'Payment block key of the line.');
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'PAYMENT_BLOCK', '{{LANDING}}.SAP_BSEG', 'ZLSPR', 'Direct', 'Payment block key of the line.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'COMPANY_CODE', '{{LANDING}}.SAP_BSEG', 'BUKRS', 'Direct', 'Company code of the line.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DOCUMENT_NUMBER', '{{LANDING}}.SAP_BSEG', 'BELNR', 'Direct', 'Accounting document number.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'FISCAL_YEAR', '{{LANDING}}.SAP_BSEG', 'GJAHR', 'Direct', 'Fiscal year of the document.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'LINE_ITEM', '{{LANDING}}.SAP_BSEG', 'BUZEI', 'Direct', 'Line item number.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DOCUMENT_TYPE', '{{LANDING}}.SAP_BKPF', 'BLART', 'Direct', 'Document type key from the header.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DOCUMENT_DATE', '{{LANDING}}.SAP_BKPF', 'BLDAT', 'Direct', 'Invoice (document) date from the header.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'POSTING_DATE', '{{LANDING}}.SAP_BKPF', 'BUDAT', 'Direct', 'Posting date from the header.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'LOCAL_CURRENCY', '{{LANDING}}.SAP_BKPF', 'WAERS', 'Direct', 'Document currency (equal to the company code currency in this model).'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'BASELINE_DATE', '{{LANDING}}.SAP_BSEG', 'ZFBDT', 'Direct', 'Baseline date for the payment terms.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'PAYMENT_TERMS', '{{LANDING}}.SAP_BSEG', 'ZTERM', 'Direct', 'Payment terms key copied to the invoice line.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'PAYMENT_TERMS_DAYS', '{{LANDING}}.SAP_BSEG', 'ZBD1T', 'Direct', 'Payment term days.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'CLEARING_DATE', '{{LANDING}}.SAP_BSEG', 'AUGDT', 'Direct', 'Clearing (payment) date; empty = open item.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'CLEARING_DOCUMENT', '{{LANDING}}.SAP_BSEG', 'AUGBL', 'Direct', 'Clearing (payment) document number.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DEBIT_CREDIT_INDICATOR', '{{LANDING}}.SAP_BSEG', 'SHKZG', 'Direct', 'Debit/credit indicator.'),
+('EDW', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'RECONCILIATION_ACCOUNT', '{{LANDING}}.SAP_BSEG', 'HKONT', 'Direct', 'GL account of the vendor line = AP reconciliation account.'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'VENDOR_ID', '{{LANDING}}.SAP_LFA1', 'LIFNR', 'Direct', 'Vendor number.'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'VENDOR_CITY', '{{LANDING}}.SAP_LFA1', 'ORT01', 'Direct', 'Vendor city.'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'VENDOR_ACCOUNT_GROUP', '{{LANDING}}.SAP_LFA1', 'KTOKK', 'Direct', 'Vendor account group (KRED / CPD).'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'IS_DELETED', '{{LANDING}}.SAP_LFA1', 'LOEVM', 'Derived', 'TRUE when the deletion flag LOEVM = X.'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'VENDOR_CREATED_DATE', '{{LANDING}}.SAP_LFA1', 'ERDAT', 'Direct', 'Vendor creation date.'),
+('EDW', '{{EDW}}.DIM_VENDOR', 'VENDOR_BANK_COUNTRY', '{{LANDING}}.SAP_LFBK', 'BANKS', 'Lookup', 'Bank country from SAP_LFBK, joined on LIFNR.'),
+('EDW', '{{EDW}}.DIM_COMPANY_CODE', 'COMPANY_CODE', '{{LANDING}}.SAP_T001', 'BUKRS', 'Direct', 'Company code.'),
+('EDW', '{{EDW}}.DIM_COMPANY_CODE', 'COMPANY_COUNTRY_CODE', '{{LANDING}}.SAP_T001', 'LAND1', 'Direct', 'Company country key.'),
+('EDW', '{{EDW}}.DIM_COMPANY_CODE', 'COMPANY_COUNTRY_NAME', '{{LANDING}}.SAP_T005T', 'LANDX', 'Lookup', 'Country name text, joined on LAND1 and SPRAS = E.'),
+('EDW', '{{EDW}}.DIM_COMPANY_CODE', 'LOCAL_CURRENCY', '{{LANDING}}.SAP_T001', 'WAERS', 'Direct', 'Company code currency.'),
+('Datamart', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'COMPANY_CODE', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'COMPANY_CODE', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'DOCUMENT_NUMBER', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DOCUMENT_NUMBER', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'DOCUMENT_DATE', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'DOCUMENT_DATE', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'POSTING_DATE', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'POSTING_DATE', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'LOCAL_CURRENCY', '{{EDW}}.FACT_ACCOUNTS_PAYABLE_GLOBAL', 'LOCAL_CURRENCY', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_VENDOR', 'VENDOR_ID', '{{EDW}}.DIM_VENDOR', 'VENDOR_ID', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_VENDOR', 'VENDOR_COUNTRY_CODE', '{{EDW}}.DIM_VENDOR', 'VENDOR_COUNTRY_CODE', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_VENDOR', 'VENDOR_CITY', '{{EDW}}.DIM_VENDOR', 'VENDOR_CITY', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_VENDOR', 'IS_ONE_TIME_VENDOR', '{{EDW}}.DIM_VENDOR', 'IS_ONE_TIME_VENDOR', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_VENDOR', 'IS_DELETED', '{{EDW}}.DIM_VENDOR', 'IS_DELETED', 'Direct', 'Passed through.'),
+('Datamart', '{{DATAMART}}.DM_AP_AGING_SUMMARY', 'COMPANY_CODE', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'COMPANY_CODE', 'Aggregated', 'Group-by column.'),
+('Datamart', '{{DATAMART}}.DM_AP_AGING_SUMMARY', 'COMPANY_NAME', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'COMPANY_NAME', 'Aggregated', 'Group-by column.'),
+('Reporting', '{{REPORTING}}.VW_AP_OPEN_ITEMS', 'COMPANY_CODE', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'COMPANY_CODE', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_OPEN_ITEMS', 'DOCUMENT_NUMBER', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'DOCUMENT_NUMBER', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_OPEN_ITEMS', 'DOCUMENT_DATE', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'DOCUMENT_DATE', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_OPEN_ITEMS', 'LOCAL_CURRENCY', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'LOCAL_CURRENCY', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_OVERDUE_ITEMS', 'COMPANY_CODE', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'COMPANY_CODE', 'Direct', 'Passed through (overdue items only).'),
+('Reporting', '{{REPORTING}}.VW_AP_OVERDUE_ITEMS', 'DOCUMENT_NUMBER', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'DOCUMENT_NUMBER', 'Direct', 'Passed through (overdue items only).'),
+('Reporting', '{{REPORTING}}.VW_AP_OVERDUE_ITEMS', 'INVOICE_REFERENCE', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'INVOICE_REFERENCE', 'Direct', 'Passed through (overdue items only).'),
+('Reporting', '{{REPORTING}}.VW_AP_OVERDUE_ITEMS', 'VENDOR_ID', '{{DATAMART}}.DM_AP_OPEN_ITEMS', 'VENDOR_ID', 'Direct', 'Passed through (overdue items only).'),
+('Reporting', '{{REPORTING}}.VW_AP_AGING_SUMMARY', 'COMPANY_CODE', '{{DATAMART}}.DM_AP_AGING_SUMMARY', 'COMPANY_CODE', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_AGING_SUMMARY', 'COMPANY_NAME', '{{DATAMART}}.DM_AP_AGING_SUMMARY', 'COMPANY_NAME', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_VENDOR', 'VENDOR_ID', '{{DATAMART}}.DM_AP_VENDOR', 'VENDOR_ID', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_VENDOR', 'VENDOR_CITY', '{{DATAMART}}.DM_AP_VENDOR', 'VENDOR_CITY', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_VENDOR', 'IS_ONE_TIME_VENDOR', '{{DATAMART}}.DM_AP_VENDOR', 'IS_ONE_TIME_VENDOR', 'Direct', 'Passed through.'),
+('Reporting', '{{REPORTING}}.VW_AP_VENDOR', 'IS_DELETED', '{{DATAMART}}.DM_AP_VENDOR', 'IS_DELETED', 'Direct', 'Passed through.');
 
 -- ---------------------------------------------------------------------
 -- 2. How the objects connect (supplementary)
@@ -1118,3 +1169,50 @@ AS
 
 -- First run: read all metadata and draft descriptions for undocumented assets with AI_COMPLETE
 CALL REFRESH_KNOWLEDGE_FABRIC(TRUE);
+
+-- ---------------------------------------------------------------------
+-- 6. REUSE ASSESSMENT: per SAP field, can a new requirement reuse it? (logic lives here, not in the agent)
+--    Reuse (in reporting) / Reuse (in EDW or datamart) / Extend EDW (ingested, not modelled) / New replication
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE VIEW KF_REUSE_ASSESSMENT
+  COMMENT = 'Per SAP field: is it ingested, where is it modelled and exposed, which T-codes use it, and the reuse decision.'
+AS
+WITH landing AS (
+  SELECT REPLACE(OBJECT_NAME, 'SAP_', '') AS SAP_TABLE, COLUMN_NAME AS SAP_FIELD, OBJECT_KEY AS LANDING_OBJECT,
+         BUSINESS_NAME
+  FROM {{DATABASE}}.{{KF}}.KF_COLUMNS
+  WHERE DATA_LAYER = 'Landing' AND LEFT(COLUMN_NAME, 1) <> '_'
+),
+used AS (
+  SELECT CHANGED_OBJECT, CHANGED_COLUMN,
+         LISTAGG(DISTINCT IFF(AFFECTED_LAYER IN ('EDW', 'Datamart'), AFFECTED_OBJECT || '.' || AFFECTED_COLUMN, NULL), ', ') AS MODEL_COLUMNS,
+         LISTAGG(DISTINCT IFF(AFFECTED_LAYER = 'Reporting', AFFECTED_OBJECT || '.' || AFFECTED_COLUMN, NULL), ', ') AS REPORTING_COLUMNS,
+         LISTAGG(DISTINCT IFF(AFFECTED_LAYER = 'Consumer', AFFECTED_OBJECT, NULL), ', ') AS CONSUMERS
+  FROM {{DATABASE}}.{{KF}}.KF_IMPACT GROUP BY 1, 2
+),
+tc AS (
+  SELECT SAP_TABLE, SAP_FIELD, LISTAGG(DISTINCT TCODE, ', ') AS TCODES, MAX(SAP_FIELD_DESCRIPTION) AS SAP_FIELD_DESCRIPTION,
+         MAX(MAPPING_OWNER) AS MAPPING_OWNER
+  FROM {{DATABASE}}.{{KF}}.KF_SAP_TCODE_MAP GROUP BY 1, 2
+)
+SELECT COALESCE(l.SAP_TABLE, tc.SAP_TABLE) AS SAP_TABLE,
+       COALESCE(l.SAP_FIELD, tc.SAP_FIELD) AS SAP_FIELD,
+       COALESCE(tc.SAP_FIELD_DESCRIPTION, l.BUSINESS_NAME) AS FIELD_DESCRIPTION,
+       l.LANDING_OBJECT,
+       l.LANDING_OBJECT IS NOT NULL AS IS_INGESTED,
+       NULLIF(u.MODEL_COLUMNS, '') AS EDW_DATAMART_COLUMNS,
+       NULLIF(u.REPORTING_COLUMNS, '') AS REPORTING_COLUMNS,
+       NULLIF(u.CONSUMERS, '') AS USED_BY_REPORTS,
+       tc.TCODES,
+       CASE WHEN l.LANDING_OBJECT IS NULL THEN 'New replication needed'
+            WHEN NULLIF(u.REPORTING_COLUMNS, '') IS NOT NULL THEN 'Reuse - already in reporting views'
+            WHEN NULLIF(u.MODEL_COLUMNS, '') IS NOT NULL THEN 'Reuse - in EDW / datamart, not yet in reporting'
+            ELSE 'Extend EDW - ingested but not modelled' END AS REUSE_STATUS,
+       CASE WHEN l.LANDING_OBJECT IS NULL THEN 'Add the SAP field to the replication, then model it in EDW'
+            WHEN NULLIF(u.REPORTING_COLUMNS, '') IS NOT NULL THEN 'Reuse the reporting column(s)'
+            WHEN NULLIF(u.MODEL_COLUMNS, '') IS NOT NULL THEN 'Expose the EDW / datamart column in a reporting view'
+            ELSE 'No new replication: map the landing field into EDW' END AS RECOMMENDED_ACTION,
+       COALESCE(tc.MAPPING_OWNER, 'AP Data Steward (role)') AS CONFIRM_WITH
+FROM landing l
+FULL OUTER JOIN tc ON tc.SAP_TABLE = l.SAP_TABLE AND tc.SAP_FIELD = l.SAP_FIELD
+LEFT JOIN used u ON u.CHANGED_OBJECT = l.LANDING_OBJECT AND u.CHANGED_COLUMN = l.SAP_FIELD;

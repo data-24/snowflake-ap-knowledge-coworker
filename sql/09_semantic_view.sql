@@ -54,7 +54,10 @@ TABLES (
     COMMENT = 'Key filters per reporting view, applied in the EDW load, datamart load, view definition or a report.',
   sap_tcodes AS {{DATABASE}}.{{KF}}.KF_SAP_TCODE_MAP PRIMARY KEY (MAP_ID)
     WITH SYNONYMS ('T-codes', 'transaction codes', 'SAP transactions', 'SAP source fields')
-    COMMENT = 'Phase 2 preview: SAP T-code -> SAP table and field -> ingested? -> EDW object/column, with mapping status and owner.'
+    COMMENT = 'Phase 2 preview: SAP T-code -> SAP table and field -> ingested? -> EDW object/column, with mapping status and owner.',
+  reuse_assessment AS {{DATABASE}}.{{KF}}.KF_REUSE_ASSESSMENT PRIMARY KEY (SAP_TABLE, SAP_FIELD)
+    WITH SYNONYMS ('reuse', 'can we reuse', 'already exists', 'new replication', 'gap analysis', 'requirement assessment')
+    COMMENT = 'Per SAP field: ingested or not, EDW/datamart and reporting columns that use it, reports using it, T-codes, and the reuse decision (reuse / extend EDW / new replication).'
 )
 
 RELATIONSHIPS (
@@ -251,7 +254,21 @@ DIMENSIONS (
   sap_tcodes.mapping_status AS MAPPING_STATUS COMMENT = 'Validated, Ingested - not modelled, Not ingested'
     SAMPLE_VALUES ('Validated', 'Ingested - not modelled', 'Not ingested'),
   sap_tcodes.mapping_owner AS MAPPING_OWNER COMMENT = 'Who validates the mapping',
-  sap_tcodes.tcode_note AS NOTE COMMENT = 'What to do if the field is needed (reuse, extend EDW, new replication)'
+  sap_tcodes.tcode_note AS NOTE COMMENT = 'What to do if the field is needed (reuse, extend EDW, new replication)',
+
+  reuse_assessment.reuse_sap_table AS SAP_TABLE COMMENT = 'SAP table (without the SAP_ prefix), e.g. BSEG, LFA1',
+  reuse_assessment.reuse_sap_field AS SAP_FIELD WITH SYNONYMS = ('SAP field', 'source field') COMMENT = 'SAP field, e.g. LAND1, ZWELS',
+  reuse_assessment.reuse_field_description AS FIELD_DESCRIPTION COMMENT = 'SAP field description or business name',
+  reuse_assessment.reuse_landing_object AS LANDING_OBJECT COMMENT = 'Landing table holding the field, if ingested',
+  reuse_assessment.reuse_is_ingested AS IS_INGESTED COMMENT = 'TRUE if the field is already replicated into landing',
+  reuse_assessment.reuse_model_columns AS EDW_DATAMART_COLUMNS COMMENT = 'EDW and datamart columns built from the field',
+  reuse_assessment.reuse_reporting_columns AS REPORTING_COLUMNS COMMENT = 'Reporting view columns that expose the field',
+  reuse_assessment.reuse_reports AS USED_BY_REPORTS COMMENT = 'Dashboards, reports and extracts that use the field',
+  reuse_assessment.reuse_tcodes AS TCODES COMMENT = 'SAP T-codes that show the field (phase 2 preview)',
+  reuse_assessment.reuse_status AS REUSE_STATUS WITH SYNONYMS = ('reuse decision', 'can it be reused')
+    COMMENT = 'Reuse - already in reporting views / Reuse - in EDW or datamart, not yet in reporting / Extend EDW - ingested but not modelled / New replication needed',
+  reuse_assessment.reuse_action AS RECOMMENDED_ACTION COMMENT = 'What to do',
+  reuse_assessment.reuse_confirm_with AS CONFIRM_WITH COMMENT = 'Who confirms the mapping'
 )
 
 METRICS (
@@ -271,7 +288,7 @@ METRICS (
 
 COMMENT = 'Knowledge Fabric metadata model for the AP data product: objects, columns, lineage, impact, mapping, change log, requirements, report usage, reporting view cards, key filters, SAP T-codes, relationships, glossary, refresh jobs. Metadata only, no AP business values.'
 
-AI_SQL_GENERATION 'This model holds METADATA about the Accounts Payable data model, not AP amounts. Object keys look like SCHEMA.OBJECT (for example AP_REPORTING.VW_AP_OPEN_ITEMS). Match object and column names case-insensitively with ILIKE and partial names (for example ILIKE ''%VENDOR_COUNTRY%''). For "where does a field come from", select from field_lineage filtered on report_column (and report_object if given), ordered by hop, and show target, source, mapping type and rule. For layer order use layer_order. Show percentages with 2 decimals (multiply 0-1 shares by 100). For masked fields use is_masked = TRUE and show masking_policy and masked_via. Treat glossary terms with status Draft as not official. For "what is affected if X changes" or "which reports depend on X" use the impact table filtered on changed_object / changed_column (consumers have affected_layer = Consumer). For requirements use requirements and requirement_trace. For "what changed and why" or "how was it reviewed" use mapping_changes ordered by change_date. For everything about one reporting view (data dictionary card) use reporting_views. For SAP T-codes, SAP tables/fields, "is it already ingested" or "do we need new replication" use sap_tcodes. For KPI lists use business_glossary where term_type = KPI.'
+AI_SQL_GENERATION 'This model holds METADATA about the Accounts Payable data model, not AP amounts. Object keys look like SCHEMA.OBJECT (for example AP_REPORTING.VW_AP_OPEN_ITEMS). Match object and column names case-insensitively with ILIKE and partial names (for example ILIKE ''%VENDOR_COUNTRY%''). For "where does a field come from", select from field_lineage filtered on report_column (and report_object if given), ordered by hop, and show target, source, mapping type and rule. For layer order use layer_order. Show percentages with 2 decimals (multiply 0-1 shares by 100). For masked fields use is_masked = TRUE and show masking_policy and masked_via. Treat glossary terms with status Draft as not official. For "what is affected if X changes" or "which reports depend on X" use the impact table filtered on changed_object / changed_column (consumers have affected_layer = Consumer). For requirements use requirements and requirement_trace. For "what changed and why" or "how was it reviewed" use mapping_changes ordered by change_date. For everything about one reporting view (data dictionary card) use reporting_views. For SAP T-codes, SAP tables/fields, "is it already ingested" or "do we need new replication" use sap_tcodes. For KPI lists use business_glossary where term_type = KPI. For "do we already have this data / can we reuse it / do we need new replication" at SAP-field level use reuse_assessment (filter on reuse_tcodes ILIKE the T-code, or reuse_sap_field / reuse_sap_table).'
 
 AI_QUESTION_CATEGORIZATION 'Questions about actual AP amounts, balances, invoices or vendors (business values) are out of scope of this metadata model: say so and explain which reporting view holds the data. Never reveal masked values.'
 
@@ -368,5 +385,21 @@ AI_VERIFIED_QUERIES (
     QUESTION 'Which KPIs are defined for AP and how are they calculated?'
     VERIFIED_AT 1794441600
     SQL 'SELECT term, calculation, implemented_in, term_status, source_document FROM business_glossary WHERE term_type = ''KPI'' ORDER BY term'
+  ),
+  vq_reuse_tcode AS (
+    QUESTION 'Which SAP fields does T-code FBL1N use, and can we reuse them or do we need new replication?'
+    VERIFIED_AT 1794528000
+    ONBOARDING_QUESTION TRUE
+    SQL 'SELECT reuse_sap_table, reuse_sap_field, reuse_field_description, reuse_is_ingested, reuse_model_columns, reuse_reporting_columns, reuse_status, reuse_action, reuse_confirm_with FROM reuse_assessment WHERE reuse_tcodes ILIKE ''%FBL1N%'' ORDER BY reuse_status, reuse_sap_table, reuse_sap_field'
+  ),
+  vq_reuse_field AS (
+    QUESTION 'Is the vendor payment methods field already available, or do we need new replication?'
+    VERIFIED_AT 1794528000
+    SQL 'SELECT reuse_sap_table, reuse_sap_field, reuse_field_description, reuse_landing_object, reuse_is_ingested, reuse_model_columns, reuse_reporting_columns, reuse_status, reuse_action FROM reuse_assessment WHERE reuse_sap_field = ''ZWELS'''
+  ),
+  vq_reuse_summary AS (
+    QUESTION 'How many SAP fields are reusable, need EDW extension, or need new replication?'
+    VERIFIED_AT 1794528000
+    SQL 'SELECT reuse_status, COUNT(*) AS sap_fields FROM reuse_assessment GROUP BY reuse_status ORDER BY reuse_status'
   )
 );

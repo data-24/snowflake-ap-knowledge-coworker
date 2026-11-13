@@ -12,40 +12,7 @@ Data engineers ask in plain English and a **Cortex Agent** answers from Snowflak
 
 > **Everything is synthetic**: generated SAP-like data, generated project documents, generic names. It is a learning project and reference implementation, not production code.
 
-## Architecture
-
-```mermaid
-flowchart LR
-  subgraph MODEL["AP data model (synthetic, SAP-like)"]
-    direction TB
-    L["SAP_LANDING<br/>BKPF · BSEG · BSEC · LFA1<br/>LFB1 · LFBK · T001 · T005T"] --> E["EDW<br/>FACT_ACCOUNTS_PAYABLE_GLOBAL<br/>DIM_VENDOR · DIM_COMPANY_CODE"]
-    E --> D["AP_DATAMART<br/>DM_AP_OPEN_ITEMS · DM_AP_AGING_SUMMARY<br/>DM_AP_VENDOR · AP_AGING_BUCKETS"]
-    D --> R["AP_REPORTING<br/>VW_AP_OPEN_ITEMS · VW_AP_OVERDUE_ITEMS<br/>VW_AP_AGING_SUMMARY · VW_AP_VENDOR"]
-  end
-  subgraph META["Snowflake metadata (primary)"]
-    direction TB
-    M1["Comments · tags (inherited)"]
-    M2["Masking policies · keys"]
-    M3["Tasks (refresh schedule)"]
-    M4["GET_LINEAGE · classification"]
-  end
-  subgraph DOCS["Supplementary"]
-    direction TB
-    S1["Mapping sheet · relationships<br/>glossary · requirements · change log"]
-    S2["BRD · FSD · standards PDFs<br/>AI_PARSE_DOCUMENT"]
-  end
-  MODEL -.-> META
-  META --> P["REFRESH_KNOWLEDGE_FABRIC<br/>(Python procedure, scheduled)"]
-  S1 --> P
-  P --> KF["Knowledge Fabric tables<br/>objects · columns · lineage · impact<br/>data dictionary cards · T-code map<br/>AI_COMPLETE drafts for gaps"]
-  KF --> SV["Semantic view<br/>(Cortex Analyst)"]
-  KF --> CS1["Cortex Search<br/>catalog"]
-  S2 --> CS2["Cortex Search<br/>documents"]
-  SV --> AG["Cortex Agent<br/>AP Knowledge Co-worker"]
-  CS1 --> AG
-  CS2 --> AG
-  AG --> SI["Snowflake Intelligence"]
-```
+![architecture](assets/architecture.png)
 
 ## The problem it solves
 
@@ -60,13 +27,13 @@ In a typical SAP → EDW → datamart → BI landscape, a new request ("rebuild 
 | `AP_DATAMART` | `DM_AP_OPEN_ITEMS` (aging), `DM_AP_AGING_SUMMARY`, `DM_AP_VENDOR`, `AP_AGING_BUCKETS` |
 | `AP_REPORTING` | `VW_AP_OPEN_ITEMS`, `VW_AP_OVERDUE_ITEMS`, `VW_AP_AGING_SUMMARY`, `VW_AP_VENDOR` (rename / key filter only) |
 | `GOVERNANCE` | 12 tags with inheritance (domain, layer, owner, technical owner, refresh, data class, sensitivity, key role ...), 4 masking policies incl. a conditional one, primary / business keys, optional classification |
-| `KNOWLEDGE_FABRIC` | Metadata catalog built from live Snowflake metadata, lineage and impact, data dictionary card per reporting view, glossary + KPIs, requirements trace, mapping change log, SAP T-code map, 4 parsed documents, 2 Cortex Search services, a semantic view, the agent and an evaluation set |
+| `KNOWLEDGE_FABRIC` | Metadata catalog built from live Snowflake metadata, lineage and impact, data dictionary card per reporting view, **reuse assessment per SAP field** (reuse / extend EDW / new replication), glossary + KPIs, requirements trace, mapping change log, SAP T-code map, 4 parsed documents, 2 Cortex Search services, a semantic view, the agent and an evaluation set |
 
 ## Snowflake features used
 
 Cortex Agents and Snowflake Intelligence · Cortex Search · Cortex Analyst with a semantic view (verified queries) · `AI_COMPLETE` (drafts descriptions for undocumented columns, for a steward to approve) · `AI_PARSE_DOCUMENT` + `SPLIT_TEXT_RECURSIVE_CHARACTER` · tags and tag inheritance · masking policies · `INFORMATION_SCHEMA` (`TAG_REFERENCES`, `POLICY_REFERENCES`) · `SHOW PRIMARY KEYS` · tasks · `SNOWFLAKE.CORE.GET_LINEAGE` · `SYSTEM$CLASSIFY`.
 
-## How to run 
+## How to run (about 15 minutes)
 
 Requirements: **Enterprise edition**, a role that can create a database, warehouse and roles (default `ACCOUNTADMIN`), and Cortex AI available (`SELECT AI_COMPLETE('claude-sonnet-4-5', 'hello');` must work).
 
@@ -82,10 +49,11 @@ Requirements: **Enterprise edition**, a role that can create a database, warehou
 
 Helpers: `run.demo_masking()`, `run.lineage_preview("VENDOR_COUNTRY")`, `run.impact_preview("LAND1", "SAP_LFA1")`, `run.view_card("VW_AP_OPEN_ITEMS")`, `run.refresh()`.
 
-Expected `run.check()`: 19 objects, 14 masked columns (10 direct + 4 inherited by views), 6 undocumented columns with AI drafts, 4 reporting view cards, 22 T-code mappings, parsed document chunks.
+Expected `run.check()`: 19 objects, 14 masked columns (10 direct + 4 inherited by views), 6 undocumented columns with AI drafts, 4 reporting view cards, 22 T-code mappings, about 60 SAP fields in the reuse assessment, parsed document chunks.
 
 ## Questions to try
 
+0. We need to replicate an AP aging report by vendor country in EDW. Does the data already exist and can it be reused?
 1. Which tables and views make up the AP model, and how are they connected?
 2. Where does vendor country in the AP open items report come from, back to the source?
 3. How is AP aging defined, and which aging buckets exist?
@@ -109,6 +77,7 @@ Expected `run.check()`: 19 objects, 14 masked columns (10 direct + 4 inherited b
 ## Design choices
 
 - **Snowflake metadata first.** Comments, tags (with inheritance), masking policies, keys and task schedules are read live by one procedure; documents, the mapping sheet and the glossary are supplementary.
+- **Thin agent.** About 15 lines of instructions: role, which tool for what, source precedence, boundaries. Rules and decisions (such as the reuse assessment) live in tables, views and the semantic view, where they can be tested.
 - **Comment convention** `Business name: description` gives every column a business name without a separate table.
 - **Views inherit masking**, and the catalog shows it as *masked via* the upstream column.
 - **Deliberate gaps** (6 columns, 1 table without a description) show gap detection and AI drafts awaiting steward approval.

@@ -167,6 +167,7 @@ def check():
         UNION ALL SELECT 'KF: reporting view cards', COUNT(*) FROM {kf}.KF_REPORTING_VIEWS
         UNION ALL SELECT 'KF: columns with a key role', COUNT(KEY_ROLE) FROM {kf}.KF_COLUMNS
         UNION ALL SELECT 'KF: SAP T-code mappings (phase 2 preview)', COUNT(*) FROM {kf}.KF_SAP_TCODE_MAP
+        UNION ALL SELECT 'KF: SAP fields in reuse assessment', COUNT(*) FROM {kf}.KF_REUSE_ASSESSMENT
         UNION ALL SELECT 'KF: catalog entries (search)', COUNT(*) FROM {kf}.KF_CATALOG
         UNION ALL SELECT 'Docs: pages parsed', COUNT(*) FROM {kf}.KF_DOC_PAGES
         UNION ALL SELECT 'Docs: chunks', COUNT(*) FROM {kf}.KF_DOC_CHUNKS
